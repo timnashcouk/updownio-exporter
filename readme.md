@@ -41,8 +41,11 @@ Updown.io Exporter is designed to be run in a docker container, but install inst
 
 ### Prerequisites
 - Docker 
+
 or
+
 - PHP > 8.0
+
 In addition
 
 - You will need a API key from updown.io which can be got from https://updown.io/api
@@ -52,8 +55,11 @@ In addition
 
 ### Standalone
 The script uses composer so before running you will need to do:
+
 ```composer install ```
+
 Then to launch from the CLI:
+
 ```UPDOWN_TOKEN={token} php -S localhost:9128 updownio-exporter.php```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
