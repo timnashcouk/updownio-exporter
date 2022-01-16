@@ -53,18 +53,48 @@ The script uses composer so before running you will need to do:
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ### Docker file
+There is a provided docker file, its designed to be standalone with no need to mount volumes etc
+
+```docker build -t "updownio-exporter:Dockerfile" .```
+
+To run:
+
+```
+docker run \
+  -p 9124:9124 \
+  -e UPDOWN_TOKEN=YOURAPIKEY \
+  updownio-exporter
+```
 
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 Assuming you have kept the port the same confirm it's working by visiting:
-```http://localhost/9128/health```
+```http://localhost/9124/health```
 You should be greated with a confirmation message.
 
 To access metrics use:
 ```http://localhost:9124/metrics/?target={url}```
-the URL should match the URL within updown.io, including the protocol that is checked.
+the URL should match the URL within updown.io, EXCLUDING the protocol that is checked (it assumes https:// )
 
+Within Prometheus scrape configs need to be set up, they match Prometheus Blackbox Exporter
+
+```
+  - job_name: "updown.io"
+    params:
+      module: [http_prometheus]
+    static_configs:
+      - targets:
+        - example.com
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: yourserver:9124
+```
+If you recieve "is not valid hostname" error make sure your target is a hostname and not the full URL with https://.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
