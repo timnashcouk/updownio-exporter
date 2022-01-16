@@ -22,7 +22,8 @@ elseif( $service == '/metrics' ) {
     $target = false;
     if(isset($_GET['target'])){
         $target = $_GET['target'];
-        $target = filter_var($target, FILTER_SANITIZE_URL);
+        //Always assuming it' over https
+        $target = rtrim(filter_var('https://'.$target, FILTER_SANITIZE_URL),'/');
     }  
     if(! filter_var( $target, FILTER_VALIDATE_URL ) ) {
         header('HTTP/1.1 400 Bad Request');
@@ -73,8 +74,13 @@ function get_metrics( $site = false ){
     //API Token can be got https://updown.io/api use your ro_ token
     $updown = new Updown(getenv('UPDOWN_TOKEN'));
     $checks = json_decode($updown->checks());
-    $metrics =  [];
+    if( isset($checks->error)){
+        error_log($checks->error, 0);
+        return false;
+    }
+    $metrics = [];
     foreach( $checks as $check ){
+
         $metrics[$check->url] = [
             'url' => $check->url,
             'token' => $check->token,
@@ -87,6 +93,7 @@ function get_metrics( $site = false ){
             'next_check_at' => $check->next_check_at,
         ];
     }
+
     if( isset($site) && isset($metrics[$site]) ) {
         return $metrics[$site];
     }
