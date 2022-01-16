@@ -24,8 +24,11 @@
 <!-- ABOUT THE PROJECT -->
 ## About Updown.io Exporter
 
-Simple Exporter for Prometheus written in PHP that acts as a proxy between Prometheus and Updown.io to allow out of network uptime monitoring.
+Simple Exporter for Prometheus written in PHP that acts as a proxy between Prometheus and [updown.io](https://updown.io/r/vRtA2)(*aff*) to allow out of network uptime monitoring.
+
 Designed to be run in a docker container, using the built in PHP Webserver.
+
+Updown.io is a simple web app that does uptime monitoring, it has a simple UI but has several nice features and a good easy to use API. This project is not associated with updown.io though some links marked with *aff* are referral links for @timnashcouk. 
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -34,13 +37,14 @@ Designed to be run in a docker container, using the built in PHP Webserver.
 <!-- GETTING STARTED -->
 ## Getting Started
 
-Set the PHP Server up and running
-```UPDOWN_TOKEN={token} php -S localhost:9128 updownio-exporter.php```
-Then scrape it from prometheus.
+Updown.io Exporter is designed to be run in a docker container, but install instructions are provided for standalone as well.
 
 ### Prerequisites
-
+- Docker 
+or
 - PHP > 8.0
+In addition
+
 - You will need a API key from updown.io which can be got from https://updown.io/api
 
 
@@ -48,7 +52,9 @@ Then scrape it from prometheus.
 
 ### Standalone
 The script uses composer so before running you will need to do:
-```composer update ```
+```composer install ```
+Then to launch from the CLI:
+```UPDOWN_TOKEN={token} php -S localhost:9128 updownio-exporter.php```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
