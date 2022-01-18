@@ -13,21 +13,37 @@ $registry = new CollectorRegistry($adapter);
 $renderer = new RenderTextFormat();
 
 $service = rtrim(parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH),'/');
+/*
+ * Simple health check
+ * curl -X GET http://localhost:8000/health
+ */  
 if( $service == '/health' ) {
     header('Content-type: ' . RenderTextFormat::MIME_TYPE);
     echo "I'm alive! 8)";
+    log_to_console("Health check OK");
 }
+/*
+ * Get Metrics
+ * curl -X GET http://localhost:8000/metrics/?target={url}
+ */ 
 elseif( $service == '/metrics' ) {
 
     $target = false;
     if(isset($_GET['target'])){
         $target = $_GET['target'];
-        //Always assuming it' over https
-        $target = rtrim(filter_var('https://'.$target, FILTER_SANITIZE_URL),'/');
+        //We always assume the full URL is provided, prometheus will always send HTTPS
+        $target = rtrim(filter_var($target, FILTER_SANITIZE_URL),'/');
     }  
     if(! filter_var( $target, FILTER_VALIDATE_URL ) ) {
         header('HTTP/1.1 400 Bad Request');
-        echo "Invalid target";
+        if(isset($target)){
+            echo "Invalid target";
+            log_to_console("ERROR - Invalid target: ".$target);
+        }
+        else{
+            echo "No target specified";
+            log_to_console("ERROR - No target");
+        }
         exit;
     }
 
@@ -67,15 +83,22 @@ elseif( $service == '/metrics' ) {
     echo $result;
 }
 else{
+    // Routes to default 404
     return false;
 }
 
+/*
+ * Get Metrics
+ * Connects and returns metrics from updown.io
+ * @param string $target
+ * @return array
+ */ 
 function get_metrics( $site = false ){
     //API Token can be got https://updown.io/api use your ro_ token
     $updown = new Updown(getenv('UPDOWN_TOKEN'));
     $checks = json_decode($updown->checks());
     if( isset($checks->error)){
-        error_log($checks->error, 0);
+        log_to_console("ERROR - Updown API returned: $checks->error");
         return false;
     }
     $metrics = [];
@@ -98,4 +121,14 @@ function get_metrics( $site = false ){
         return $metrics[$site];
     }
     return false;
+}
+/*
+ * Log to stdout and therefore docker container logs
+ * @param string $message
+ */
+function log_to_console( $message ) {
+    $out = fopen('php://stdout', 'w');
+    $time = date('D M d H:i:s Y');
+    fputs($out, "[$time] $message\n");
+    fclose($out);
 }

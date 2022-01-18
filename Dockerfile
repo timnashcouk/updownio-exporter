@@ -5,4 +5,4 @@ WORKDIR /usr/src/updownio
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 RUN composer install
 
-CMD [ "php", "-S", "0.0.0.0:9124", "updownio-exporter.php" ]
+CMD [ "php", "-q", "-S", "0.0.0.0:9124", "updownio-exporter.php" ]
