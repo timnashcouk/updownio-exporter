@@ -34,7 +34,6 @@ if ($service == '/health') {
         $target = rtrim(filter_var($target, FILTER_SANITIZE_URL), '/');
     }
     if (! filter_var($target, FILTER_VALIDATE_URL)) {
-        header('HTTP/1.1 400 Bad Request');
         if (isset($target) && $target !== false) {
             render_error('Invalid target', 400, 'ERROR - Invalid target: '.$target);
         } else {
@@ -47,6 +46,11 @@ if ($service == '/health') {
     if (!$metrics) {
         render_error('No metrics found', 404);
     }
+    /*
+     * Register and Set Metrics
+     */ 
+
+    // Register basic info about the target (url, alias, identifier token, when it was last/next check by updown.io)
     $gauge = $registry->GetOrregisterGauge(
         'updownio',
         'info',
@@ -70,19 +74,22 @@ if ($service == '/health') {
     } else {
         $down->set(0);
     }
+    // The last check status code (200, 404, etc)
     $state = $registry->GetOrregisterGauge('updownio', 'http_status_code', 'HTTP Code');
     if (!$metrics['last_status']) {
         $state->set(0);
     } else {
         $state->set($metrics['last_status']);
     }
+    // Percentage uptime over the last 30 Days according to updown.io
     $uptime = $registry->GetOrregisterGauge('updownio', 'uptime', '% uptime over 28 days according to updown.io');
     $uptime->set($metrics['uptime']);
 
+    // Apdex score according to updown.io
     $apdex = $registry->GetOrregisterGauge('updownio', 'apdex', 'Relative Apdex score according to updown.io');
     $apdex->set($metrics['apdex']);
 
-
+    // Render the above metrics to the endpoint
     $result = $renderer->render($registry->getMetricFamilySamples());
     header('Content-type: ' . RenderTextFormat::MIME_TYPE);
     echo $result;
@@ -109,6 +116,7 @@ function get_metrics($site = false)
         return false;
     }
     $metrics = [];
+    // Loop through and format our metrics
     foreach ($checks as $check) {
         $metrics[$check->url] = [
             'url' => $check->url,
@@ -122,10 +130,11 @@ function get_metrics($site = false)
             'next_check_at' => $check->next_check_at,
         ];
     }
-
+    // Return just our target
     if (isset($site) && isset($metrics[$site])) {
         return $metrics[$site];
     }
+    // Return false if target is missing
     return false;
 }
 /*
@@ -135,7 +144,9 @@ function get_metrics($site = false)
 function log_to_console($message = false)
 {
     if ($message) {
+        // Open buffer for stdout 
         $out = fopen('php://stdout', 'w');
+        // Format matches the PHP servers date format
         $time = date('D M d H:i:s Y');
         fputs($out, "[$time] $message\n");
         fclose($out);
