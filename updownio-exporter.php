@@ -20,7 +20,7 @@ $service = rtrim(parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH),'/');
 if( $service == '/health' ) {
     header('Content-type: ' . RenderTextFormat::MIME_TYPE);
     echo "I'm alive! 8)";
-    log_to_console("Health check OK");
+    log_to_console("SUCCESS - Health check OK");
 }
 /*
  * Get Metrics
@@ -36,23 +36,18 @@ elseif( $service == '/metrics' ) {
     }  
     if(! filter_var( $target, FILTER_VALIDATE_URL ) ) {
         header('HTTP/1.1 400 Bad Request');
-        if(isset($target)){
-            echo "Invalid target";
-            log_to_console("ERROR - Invalid target: ".$target);
+        if(isset($target) && $target !== false){
+            render_error( 'Invalid target', 400, 'ERROR - Invalid target: '.$target );
         }
         else{
-            echo "No target specified";
-            log_to_console("ERROR - No target");
+            render_error( 'No target specified', 400, 'ERROR - No target' );
         }
-        exit;
     }
 
     $metrics = get_metrics($target);
 
     if(!$metrics) {
-        header('HTTP/1.1 404 Not Found');
-        echo "No metrics found";
-        exit;
+        render_error( 'No metrics found', 404 ); 
     }
     $gauge = $registry->GetOrregisterGauge('updownio', 'info', 'it sets', ['url','alias','token', 'last_check_at', 'next_check_at']);
     $gauge->set(1, [$metrics['url'],$metrics['alias'],$metrics['token'], $metrics['last_check_at'], $metrics['next_check_at']]);
@@ -86,6 +81,8 @@ else{
     // Routes to default 404
     return false;
 }
+
+// Helper functions
 
 /*
  * Get Metrics
@@ -126,9 +123,31 @@ function get_metrics( $site = false ){
  * Log to stdout and therefore docker container logs
  * @param string $message
  */
-function log_to_console( $message ) {
-    $out = fopen('php://stdout', 'w');
-    $time = date('D M d H:i:s Y');
-    fputs($out, "[$time] $message\n");
-    fclose($out);
+function log_to_console( $message=false ) {
+    if( $message ) {
+        $out = fopen('php://stdout', 'w');
+        $time = date('D M d H:i:s Y');
+        fputs($out, "[$time] $message\n");
+        fclose($out);
+    }
+}
+
+/*
+ * Render error output and optionally log
+ * @param string $message
+ * @param int $code
+ * @param string $log_message
+ * 
+ */
+function render_error( $message, $code=400, $log_message=false ) {
+    $codes = [
+        400 => 'Bad Request',
+        404 => 'Not Found',
+    ];
+    header('HTTP/1.1 '.$code.' '.$codes[$code]);
+    echo $message;
+    if( $log_message ) {
+        log_to_console($log_message);
+    }
+    exit;
 }
