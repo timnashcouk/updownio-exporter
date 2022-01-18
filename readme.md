@@ -60,7 +60,8 @@ The script uses composer so before running you will need to do:
 
 Then to launch from the CLI:
 
-```UPDOWN_TOKEN={token} php -S localhost:9128 updownio-exporter.php```
+```UPDOWN_TOKEN={token} php -q -S localhost:9128 updownio-exporter.php```
+Using `-q` parameter will silence the connection notices to stdout.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -82,7 +83,7 @@ docker run \
 <!-- USAGE EXAMPLES -->
 ## Usage
 Assuming you have kept the port the same confirm it's working by visiting:
-```http://localhost/9124/health```
+```http://localhost/9124:health```
 You should be greated with a confirmation message.
 
 To access metrics use:
